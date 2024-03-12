@@ -1,9 +1,7 @@
 import os
-
 import streamlit as st
 from dotenv import load_dotenv
 import google.generativeai as gen_ai
-
 
 # Load environment variables
 load_dotenv()
@@ -17,10 +15,15 @@ st.set_page_config(
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Set up Google Gemini-Pro AI model
-gen_ai.configure(api_key=GOOGLE_API_KEY)
-model = gen_ai.GenerativeModel('gemini-pro')
+# Available models
+models = ["gemini-pro", "other_model"]  # Add more models as needed
 
+# Select model
+selected_model = st.selectbox("Select a model", models)
+
+# Set up selected model
+gen_ai.configure(api_key=GOOGLE_API_KEY)
+model = gen_ai.GenerativeModel(selected_model)
 
 # Function to translate roles between Gemini-Pro and Streamlit terminology
 def translate_role_for_streamlit(user_role):
@@ -29,11 +32,9 @@ def translate_role_for_streamlit(user_role):
     else:
         return user_role
 
-
 # Initialize chat session in Streamlit if not already present
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = model.start_chat(history=[])
-
 
 # Display the chatbot's title on the page
 st.title("🤖 MAHE's ChatBot")
@@ -44,13 +45,14 @@ for message in st.session_state.chat_session.history:
         st.markdown(message.parts[0].text)
 
 # Input field for user's message
-user_prompt = st.chat_input("Ask Gemini-Pro about MAHE...")
+user_prompt = st.chat_input("Ask about MAHE...")
 if user_prompt:
     # Add user's message to chat and display it
+    st.session_state.chat_session.send_message(user_prompt)
     st.chat_message("user").markdown(user_prompt)
 
-    # Send user's message to Gemini-Pro and get the response
-    gemini_response = st.session_state.chat_session.send_message(user_prompt)
+    # Get the response
+    gemini_response = st.session_state.chat_session.get_response()
 
     # Display Gemini-Pro's response
     with st.chat_message("assistant"):
